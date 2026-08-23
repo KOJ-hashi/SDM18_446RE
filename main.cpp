@@ -1,9 +1,14 @@
 #include "mbed.h"
 
-BufferedSerial pc(USBTX, USBRX, 115200);
+BufferedSerial pc(USBTX, USBRX, 921600);
 
-// F446側のCANピン定義 (通常 PA_11 = RD, PA_12 = TD)
-CAN can(PA_11, PA_12, 500000); // 500 kbps
+// CAN設定 (F446のピンに合わせて適宜変更してください。通常は PA_11, PA_12 や PB_8, PB_9 など)
+CAN can(PA_11, PA_12, 1000000);
+
+DigitalOut led1(PC_0);
+DigitalOut led2(PC_1);
+DigitalOut led3(PC_2);
+DigitalOut led4(PC_3);
 
 FileHandle *mbed::mbed_override_console(int fd)
 {
@@ -12,28 +17,33 @@ FileHandle *mbed::mbed_override_console(int fd)
 
 int main()
 {
+    led1 = 1;
     ThisThread::sleep_for(500ms);
-
-    printf("\r\n--- SDM18 F446 Receiver ---\r\n");
-    printf("Waiting for CAN message (ID: 0x100)...\r\n");
+    printf("\r\n--- CAN Receiver F446 ---\r\n");
 
     CANMessage msg;
 
     while (true)
     {
+        led2 =1;
         // CANメッセージを受信したかチェック
         if (can.read(msg))
         {
-            // IDが 0x100 かつデータ長が 2バイトか確認
-            if (msg.id == 0x701 && msg.len == 2)
+            led3 = 1;
+            // IDが 0x701（または送信側で設定したID）のデータかチェック
+            if (msg.id == 0x701)
             {
-                uint16_t distance = static_cast<uint16_t>(msg.data[0]) | 
-                                    (static_cast<uint16_t>(msg.data[1]) << 8);
+                led4 = 1;
+                // 2バイトのデータから距離（mm）を復元
+                uint16_t received_distance = 
+                    static_cast<uint16_t>(msg.data[0]) | 
+                    (static_cast<uint16_t>(msg.data[1]) << 8);
 
-                printf("Received Distance from F303: %u mm\r\n", distance);
+                printf("Received ID: 0x%X | Distance: %u mm\r\n", msg.id, received_distance);
             }
         }
 
-        ThisThread::sleep_for(5ms);
+        // CPUを占有しないためのウェイト
+        ThisThread::sleep_for(1ms);
     }
 }
