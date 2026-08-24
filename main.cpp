@@ -21,26 +21,39 @@ int main()
     ThisThread::sleep_for(500ms);
     printf("\r\n--- CAN Receiver F446 ---\r\n");
 
+
     CANMessage msg;
 
     while (true)
     {
-        led2 =1;
+        
         // CANメッセージを受信したかチェック
-        if (can.read(msg))
-        {
-            led3 = 1;
+        if (can.read(msg)){
+            printf("Rx Id 0x5X\r\n,msg.id");
             // IDが 0x701（または送信側で設定したID）のデータかチェック
             if (msg.id == 0x701)
             {
-                led4 = 1;
+                led2 = 1;
                 // 2バイトのデータから距離（mm）を復元
-                uint16_t received_distance = 
+                uint16_t received_distance1 = 
                     static_cast<uint16_t>(msg.data[0]) | 
                     (static_cast<uint16_t>(msg.data[1]) << 8);
 
-                printf("Received ID: 0x%X | Distance: %u mm\r\n", msg.id, received_distance);
+                    printf("Received ID: 0x%X | Distance: %u mm  ,", msg.id, received_distance1);
             }
+            if(msg.id == 0x702){
+                led3 = 1;
+
+                uint16_t received_distance2 = static_cast<uint16_t>(msg.data[0]) | (static_cast<uint16_t>(msg.data[1]) << 8);
+                    printf("Received ID: 0x%X | Distance: %u mm  ,", msg.id, received_distance2);
+            }
+            if(msg.id == 0x703){
+                led4 = 1;
+                uint16_t received_distance3 = static_cast<uint16_t>(msg.data[0]) | (static_cast<uint16_t>(msg.data[1]) << 8);
+                printf("Received ID: 0x%X | Distance: %u mm\r", msg.id, received_distance3);
+            }
+            printf("\n");
+
         }
 
         // CPUを占有しないためのウェイト
